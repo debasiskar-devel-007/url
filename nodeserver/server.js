@@ -2028,7 +2028,8 @@ var state;
 
 app.get('/gplist',function(req,resp){
 
-    var url = 'http://www.wellness.com/find/cardiologist';            //we have to import data from this link
+    //var url = 'http://www.wellness.com/find/cardiologist';
+    var url ='http://www.wellness.com/find/general%20practitioner';
     var mainurl = 'http://www.wellness.com/';            //we have to import data from this link
     var statecityarr=new Array();
     var statecity=new Object();
@@ -2038,7 +2039,7 @@ app.get('/gplist',function(req,resp){
             var $ = cheerio.load(html2);                //assigning the html of full page to $ variable
             //var states;
 
-            $('.find-item-container').each(function () {             //show all values of state and bind every value to url using loop
+            $('.find-item-container').eq(41).each(function () {             //show all values of state and bind every value to url using loop
 
                 state=$(this).find('a').find('h2').html();
                 $(this).find('ul').find('li').each(function () {
@@ -2056,6 +2057,15 @@ app.get('/gplist',function(req,resp){
                     fetchdata(statecity,7);
                     fetchdata(statecity,8);
                     fetchdata(statecity,9);
+                    fetchdata(statecity,10);
+                    fetchdata(statecity,11);
+                    fetchdata(statecity,12);
+                    fetchdata(statecity,13);
+                    fetchdata(statecity,14);
+                    fetchdata(statecity,15);
+                    fetchdata(statecity,16);
+                    fetchdata(statecity,17);
+                    fetchdata(statecity,18);
                 })
 
                 //console.log($(this).find('h2').html());
@@ -2103,11 +2113,11 @@ function  fetchdata(obj,pageno) {
 
                 setTimeout(function () {
 
-                    if(urlcounter<2000000)fetchdoctordata(obj,actualurl);
+                    if(urlcounter<500)fetchdoctordata(obj,actualurl);
                     urlcounter++;
                     //fetchdoctordata(obj,actualurl);
                     //return;
-                },4000);
+                },2500);
 
             });
 
@@ -2198,21 +2208,8 @@ function  fetchdoctordata(obj,actualurl) {
         if(!error2) {
             var $ = cheerio.load(html2);                //assigning the html of full page to $ variable
             //var states;
-            console.log('in html ... ');
-            console.log(html2);
-
-            console.log($("h1[itemprop='name']").html());
-            console.log($('b.listing-org-name').html());
-            obj.docname=$('.listing-org-name').html();
-            obj.docnamehead=$("h1[itemprop='name']").html();
-            obj.docphone=$('.office-phone').html();
-            obj.docaddress=$('.office-address').html();
-            obj.docabout=$('.listing-about').html();
-            obj.docservice=$('.availableService').html();
-            obj.docsadditionalservice=$('.additional-services-textç').html();
-            obj._id=actualurl;
-            //console.log(obj);
-            //savedocdata(obj);
+            //console.log('in html ... ');
+            //console.log(html2);
 
         }
         else {
@@ -2241,32 +2238,39 @@ function savedocdata(obj) {
 }
 
 
+var updatecounter=0;
+
 app.get('/particulardocdata',function(req,resp){
 
     var url = req.query.url;            //we have to import data from this link
     console.log(url);
+    var mainurl = 'http://www.wellness.com/';
     request(url, function(error2, response, html2){                    //before using this request declare this and install request using npm
         if(!error2) {
             var $ = cheerio.load(html2);                //assigning the html of full page to $ variable
             //var states;
-            console.log('in html ... ');
+            //console.log('in html ... ');
             //console.log(html2);
-            obj=new Object();
+
             //obj=req.query.obj;
-            console.log($("h1[itemprop='name']").html());
-            console.log($('b.listing-org-name').html());
+            //console.log('ofifce phone');
+            //console.log($("h4[itemprop='telephone']").html());
+            var obj=new Object();
             obj.docnamehead=$("h1[itemprop='name']").html();
             obj.docname=$('.listing-org-name').html();
-            obj.docphone=$('.office-phone').html();
+            obj.docphone=$("h4[itemprop='telephone']").html();
             obj.docaddress=$('.office-address').html();
             obj.docabout=$('.listing-about').html();
             obj.docservice=$('.availableService').html();
+            obj.phoneurl=$('#directions_tab').find('a').attr('href');
             obj.docsadditionalservice=$('.additional-services-textç').html();
             obj._id=url;
             obj.state=req.query.state;
             obj.city=req.query.city;
-            console.log(obj);
-            var collection = db.collection('cardiodoctorlist');
+            //console.log(obj);
+
+
+            var collection = db.collection('generaldoctorlist');
 
             collection.insert([obj], function (err, result) {
                 if (err) {
@@ -2274,6 +2278,12 @@ app.get('/particulardocdata',function(req,resp){
                     console.log("in error -- :"+err);
                 } else {
                     console.log('insert completed');
+                    console.log(result);
+                    updatephone(mainurl,obj);
+
+
+
+
                     //resp.send('Inserted %d documents into the "users" collection. The documents inserted with "_id" are:', result.length, result);
 
                 }
@@ -2294,6 +2304,43 @@ app.get('/particulardocdata',function(req,resp){
 
 
 });
+
+function updatephone(mainurl,obj) {
+
+    request(mainurl+obj.phoneurl, function(error21, response1, html21){                    //before using this request declare this and install request using npm
+        if(!error21) {
+            var $ = cheerio.load(html21);                //assigning the html of full page to $ variable
+            //var states;
+            console.log('in doc update phone ... ');
+
+            var docphone=$("span[itemprop='telephone']").html();
+            console.log(docphone);
+            console.log(obj._id);
+            console.log(updatecounter++);
+            var collection = db.collection('generaldoctorlist');
+            collection.update({_id: obj._id}, {$set: {docphone:docphone}},function(err, results) {
+                if (err){
+                    resp.send("failed");
+                    throw err;
+                }
+                else {
+
+
+                    //resp.send("success");
+                    //db.close();
+
+                }
+            });
+
+        }
+        else {
+            console.log("inside particulardocdata");
+            console.log('in error  :'+error2);
+        }
+
+    });
+
+}
 
 /*-----------------------------------URL_UPDATE_END---------------------------------*/
 
